@@ -99,6 +99,68 @@ public class DBMSSQL extends DBSybase
 		return DB.NULL_SCHEMA;
 	}
     
-    
+	/**
+	 * 获取指定数据的分页数据sql语句
+	 * @param sql
+	 * @return
+	 */
+	public PagineSql getDBPagineSql(String sql, long offset, int maxsize,boolean prepared,String orderby) {
+		
+//		return new StringBuilder(sql).append(" limit ").append(offset).append(",").append(maxsize).toString();
+		StringBuilder newsql = new StringBuilder();
+		if(prepared)
+		{
+			newsql.append("SELECT t.* FROM (SELECT res.* ,row_number() over(").append(orderby).append(") row_number_ FROM (").append(sql)
+			.append(") res) t where t.row_number_ <= ? and t.row_number_ >= ?");
+			 
+			
+			/**
+			 * StringBuilder ret = null;
+    	if(prepared)
+    		ret = new StringBuilder().append("select ss1.* from (select tt1.*,rownum rowno_ from (").append(sql).append(
+                ") tt1 where rownum <= ?) ss1 where ss1.rowno_ >= ?");
+    	else
+    		ret = new StringBuilder("select ss1.* from (select tt1.*,rownum rowno_ from (").append(sql).append(
+                  ") tt1 where rownum <= ").append((offset + maxsize)).append(") ss1 where ss1.rowno_ >= ").append(
+                  (offset + 1));
+        return new PagineSql(ret.toString(),offset + maxsize,offset + 1,offset, maxsize, prepared);
+			 */
+			return new PagineSql(newsql.toString(),offset + maxsize,offset + 1,offset, maxsize, prepared).setRebuilded(true);
+		}
+		else
+		{
+			newsql.append("SELECT t.* FROM (SELECT res.* ,row_number() over(").append(orderby).append(") row_number_ FROM (").append(sql)
+			.append(") res) t where t.row_number_ <= ").append(offset + maxsize).append(" and t.row_number_ >= ").append(offset + 1).append("");
+			return new PagineSql(newsql.toString(),offset + maxsize,offset + 1,offset, maxsize, prepared).setRebuilded(true);
+		}
+		 
+	}
+	
+	  public String getStringPagineSql(String sql,String orderby)
+	  {
+		  StringBuilder newsql = new StringBuilder();
+		  newsql.append("SELECT t.* FROM (SELECT res.* ,row_number() over(").append(orderby).append(") row_number_ FROM (").append(sql)
+			.append(") res) t where t.row_number_ <= ? and t.row_number_ >= ?");
+			return newsql.toString();
+	  }
+	  public String getStringPagineSql(String schema,String tablename,String pkname ,String columns,String orderby)
+	    {
+		  
+		  StringBuilder newsql = new StringBuilder();
+		  newsql.append("SELECT t.* FROM (SELECT res.* ,row_number() over(").append(orderby).append(") row_number_ FROM (").append("SELECT ");
+		 	if(columns != null && ! columns.equals(""))
+		 	{
+		 		newsql.append( columns);
+		 	}
+		 	else
+		 		newsql.append("* ");
+		 	newsql.append(" from   ");
+		 	if(schema != null && !schema.equals(""))
+		 		newsql.append(schema).append(".");
+		 	newsql.append( tablename)
+			.append(") res) t where t.row_number_ <= ? and t.row_number_ >= ?");
+			return newsql.toString();
+	    	
+	    }
 
 }

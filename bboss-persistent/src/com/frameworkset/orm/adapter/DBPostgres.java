@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.frameworkset.orm.adapter.DB.PagineSql;
 import com.frameworkset.orm.platform.PlatformPostgresqlImpl;
 
 /**
@@ -197,4 +198,81 @@ public class DBPostgres extends DB
     	 sdf = new SimpleDateFormat(DATE_FORMAT);
     	this.platform = new PlatformPostgresqlImpl();
     }
+    
+	/**
+	 * 获取指定数据的分页数据sql语句
+	 * @param sql
+	 * @return
+	 */
+	public PagineSql getDBPagineSql(String sql, long offset, int maxsize,boolean prepared) {
+		
+//		return new StringBuilder(sql).append(" limit ").append(offset).append(",").append(maxsize).toString();
+		StringBuilder newsql = null;
+		if(prepared)
+			newsql = new StringBuilder().append(sql).append(" limit ?,?");
+		else
+			newsql = new StringBuilder().append(sql).append(" limit ").append(offset).append(",").append(maxsize);
+		return new PagineSql(newsql.toString(),offset,(long)maxsize,offset, maxsize, prepared).setRebuilded(true);
+	}
+	
+	  public String getStringPagineSql(String sql)
+	  {
+		  StringBuilder newsql = new StringBuilder().append(sql).append(" limit ?,?");
+			return newsql.toString();
+	  }
+	  public String getStringPagineSql(String schema,String tablename,String pkname ,String columns)
+	    {
+	    	StringBuilder sqlbuilder = new StringBuilder();
+			 	sqlbuilder.append("SELECT ");
+			 	if(columns != null && ! columns.equals(""))
+			 	{
+			 		sqlbuilder.append( columns);
+			 	}
+			 	else
+			 		sqlbuilder.append("* ");
+			 	sqlbuilder.append(" from   ");
+			 	if(schema != null && !schema.equals(""))
+			 		sqlbuilder.append(schema).append(".");
+			 	sqlbuilder.append( tablename);
+			 sqlbuilder.append( " limit ?,?");
+	        return sqlbuilder.toString();
+	    }
+	  /**
+		 * 获取指定数据的分页数据sql语句
+		 * @param sql
+		 * @return
+		 */
+		public PagineSql getDBPagineSql(String sql, long offset, int maxsize,boolean prepared,String orderBy) {
+			
+//			return new StringBuilder(sql).append(" limit ").append(offset).append(",").append(maxsize).toString();
+			StringBuilder newsql = null;
+			if(prepared)
+				newsql = new StringBuilder().append(sql).append(" ").append(orderBy).append(" limit ?,?");
+			else
+				newsql = new StringBuilder().append(sql).append(" ").append(orderBy).append(" limit ").append(offset).append(",").append(maxsize);
+			return new PagineSql(newsql.toString(),offset,(long)maxsize,offset, maxsize, prepared).setRebuilded(true);
+		}
+		
+		  public String getStringPagineSql(String sql,String orderBy)
+		  {
+			  StringBuilder newsql = new StringBuilder().append(sql).append(" ").append(orderBy).append(" limit ?,?");
+				return newsql.toString();
+		  }
+		  public String getStringPagineSql(String schema,String tablename,String pkname ,String columns,String orderBy)
+		    {
+		    	StringBuilder sqlbuilder = new StringBuilder();
+				 	sqlbuilder.append("SELECT ");
+				 	if(columns != null && ! columns.equals(""))
+				 	{
+				 		sqlbuilder.append( columns);
+				 	}
+				 	else
+				 		sqlbuilder.append("* ");
+				 	sqlbuilder.append(" from   ");
+				 	if(schema != null && !schema.equals(""))
+				 		sqlbuilder.append(schema).append(".");
+				 	sqlbuilder.append( tablename);
+				 sqlbuilder.append(" ").append(orderBy).append( " limit ?,?");
+		        return sqlbuilder.toString();
+		    }
 }

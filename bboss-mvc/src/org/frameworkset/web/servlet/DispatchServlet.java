@@ -50,6 +50,7 @@ import org.frameworkset.spi.support.LocaleContext;
 import org.frameworkset.spi.support.LocaleContextHolder;
 import org.frameworkset.spi.support.SimpleLocaleContext;
 import org.frameworkset.util.ClassUtils;
+import org.frameworkset.util.DataFormatUtil;
 import org.frameworkset.util.beans.BeansException;
 import org.frameworkset.util.io.ClassPathResource;
 import org.frameworkset.web.HttpRequestMethodNotSupportedException;
@@ -274,7 +275,7 @@ public class DispatchServlet extends HttpServlet {
 
 	
 	/** Expose LocaleContext and RequestAttributes as inheritable for child threads? */
-	private boolean threadContextInheritable = false;
+	private static boolean threadContextInheritable = false;
 	
 	/** MultipartResolver used by this servlet */
 	private MultipartResolver multipartResolver;
@@ -468,7 +469,7 @@ public class DispatchServlet extends HttpServlet {
 
 		finally {
 			if (failureCause != null) {
-				this.logger.debug("Could not complete request", failureCause);
+//				this.logger.debug("Could not complete request", failureCause);
 			}
 			else {
 				this.logger.debug("Successfully completed request");
@@ -709,9 +710,11 @@ public class DispatchServlet extends HttpServlet {
 		request.setAttribute(THEME_SOURCE_ATTRIBUTE, getThemeSource());
 
 		try {
+			DataFormatUtil.initDateformatThreadLocal();
 			doDispatch(request, response);
 		}
 		finally {
+			DataFormatUtil.releaseDateformatThreadLocal();
 			// Restore the original attribute snapshot, in case of an include.
 			if (attributesSnapshot != null) {
 				restoreAttributesAfterInclude(request, attributesSnapshot);
@@ -773,6 +776,15 @@ public class DispatchServlet extends HttpServlet {
 			return null;
 		}
 	}
+	
+	/**
+	 * 设置语言环境
+	 * @param request
+	 */
+	public static void setLocaleContext(final HttpServletRequest request)
+	{
+		LocaleContextHolder.setLocaleContext(buildLocaleContext(request), threadContextInheritable);
+	}
 	/**
 	 * Process the actual dispatching to the handler.
 	 * <p>The handler will be obtained by applying the servlet's HandlerMappings in order.
@@ -805,7 +817,8 @@ public class DispatchServlet extends HttpServlet {
 		try {
 			
 			previousLocaleContext = LocaleContextHolder.getLocaleContext();
-			LocaleContextHolder.setLocaleContext(buildLocaleContext(request), this.threadContextInheritable);
+//			LocaleContextHolder.setLocaleContext(buildLocaleContext(request), this.threadContextInheritable);
+			setLocaleContext(  request);
 
 			// Expose current RequestAttributes to current thread.
 			previousRequestAttributes = RequestContextHolder.getRequestAttributes();
@@ -1095,7 +1108,7 @@ public class DispatchServlet extends HttpServlet {
 	 * @param request current HTTP request
 	 * @return the corresponding LocaleContext
 	 */
-	protected LocaleContext buildLocaleContext(final HttpServletRequest request) {
+	protected static LocaleContext buildLocaleContext(final HttpServletRequest request) {
 		Locale locale = localeResolver.resolveLocale(request);
 		return new SimpleLocaleContext(locale);
 	}

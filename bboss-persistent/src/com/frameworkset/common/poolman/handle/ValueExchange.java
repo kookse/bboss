@@ -17,14 +17,19 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.DecimalFormat;
 
-import oracle.jdbc.OracleTypes;
-import sun.misc.BASE64Encoder;
+import org.frameworkset.util.annotations.wraper.ColumnWraper;
 
 import com.frameworkset.common.poolman.NestedSQLException;
 import com.frameworkset.common.poolman.util.SQLUtil;
 import com.frameworkset.orm.adapter.DB;
+import com.frameworkset.util.ColumnEditorInf;
+import com.frameworkset.util.EditorInf;
+import com.frameworkset.util.FieldToColumnEditor;
 import com.frameworkset.util.NoSupportTypeCastException;
 import com.frameworkset.util.ValueObjectUtil;
+
+import oracle.jdbc.OracleTypes;
+import sun.misc.BASE64Encoder;
 
 /**
  * 
@@ -509,7 +514,7 @@ public class ValueExchange {
 	    }
 	}
 	public static Object getValueFromCallableStatement(CallableStatement cs,
-			int columnIndex, int sqltype, Class javaType,String dbname) throws SQLException{
+			int columnIndex, int sqltype, Class javaType,String dbname,EditorInf<?> editor) throws SQLException{
 //		Object value = null;
 //		try {
 //			TypeHandler handler = getTypeHandler(sqltype);
@@ -523,14 +528,21 @@ public class ValueExchange {
 //		return value;
 		Object value = getValueFromCallableStatement(cs, columnIndex, sqltype,
 				dbname);
-		
-		if(value == null)
-			return ValueObjectUtil.getDefaultValue(javaType);
-		return convert(value, value.getClass(), javaType);
+		if(editor == null)
+		{
+			if(value == null)
+				return ValueObjectUtil.getDefaultValue(javaType);
+			return convert(value, value.getClass(), javaType);
+		}
+		else
+		{
+			return editor.getValueFromObject(value);
+		}
 	}
 	
 	public static Object getValueFromCallableStatement(CallableStatement cs,
-			String parameterName, int sqltype, Class javaType,String dbname) throws SQLException{
+			String parameterName, int sqltype, Class javaType,String dbname,ColumnEditorInf editor,
+	ColumnWraper cl  ) throws SQLException{
 //		Object value = null;
 //		try {
 //			TypeHandler handler = getTypeHandler(sqltype);
@@ -544,10 +556,16 @@ public class ValueExchange {
 //		return value;
 		Object value = getValueFromCallableStatement(cs, parameterName, sqltype,
 				dbname);
-		
-		if(value == null)
-			return value;
-		return convert(value, value.getClass(), javaType);
+		if(editor == null || editor instanceof FieldToColumnEditor)
+		{
+			if(value == null)
+				return value;
+			return convert(value, value.getClass(), javaType);
+		}
+		else
+		{
+			return editor.getValueFromObject(cl,value);
+		}
 	}
 	
 	
@@ -1067,7 +1085,7 @@ public class ValueExchange {
 //		
 //	}
 	public static Object getValueFromResultSet(ResultSet rs,
-			int columnIndex, int sqltype, Class javaType,DB db) throws SQLException{
+			int columnIndex, int sqltype, Class javaType,DB db,ColumnEditorInf editor,ColumnWraper columnWraper) throws SQLException{
 //		Object value = null;
 //		try {
 //			TypeHandler handler = getTypeHandler(sqltype);
@@ -1081,14 +1099,23 @@ public class ValueExchange {
 //		return value;
 		Object value = getValueFromRS(rs, columnIndex, sqltype,
 				  db);
-		if(value == null)
-			return ValueObjectUtil.getDefaultValue(javaType);;
-		return convert(value, value.getClass(), javaType);
+		
+		if(editor == null  || editor instanceof FieldToColumnEditor)
+		{
+			if(value == null)
+				return ValueObjectUtil.getDefaultValue(javaType);
+			
+			return convert(value, value.getClass(), javaType);
+		}
+		else
+		{
+			return editor.getValueFromObject(columnWraper,value);
+		}
 		
 		
 	}
 	public static Object getValueFromResultSet(ResultSet rs,
-			String column, int sqltype, Class javaType,String dbname) throws SQLException{
+			String column, int sqltype, Class javaType,String dbname,ColumnEditorInf editor,ColumnWraper cl) throws SQLException{
 //		Object value = null;
 //		try {
 //			TypeHandler handler = getTypeHandler(sqltype);
@@ -1102,9 +1129,16 @@ public class ValueExchange {
 //		return value;
 		Object value = getValueFromRS(rs, column, sqltype,
 				 dbname);
-		if(value == null)
-			return ValueObjectUtil.getDefaultValue(javaType);;
-		return convert(value, value.getClass(), javaType);
+		if(editor == null || editor instanceof FieldToColumnEditor)
+		{
+			if(value == null)
+				return ValueObjectUtil.getDefaultValue(javaType);
+			return convert(value, value.getClass(), javaType);
+		}
+		else
+		{
+			return editor.getValueFromObject(cl,value);
+		}
 		
 		
 	}

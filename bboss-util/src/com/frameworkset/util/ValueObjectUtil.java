@@ -72,6 +72,7 @@ import org.apache.log4j.Logger;
 import org.frameworkset.util.BigFile;
 import org.frameworkset.util.ClassUtil;
 import org.frameworkset.util.ClassUtil.PropertieDescription;
+import org.frameworkset.util.DataFormatUtil;
 import org.frameworkset.util.MethodParameter;
 
 import sun.misc.BASE64Decoder;
@@ -1608,17 +1609,16 @@ public class ValueObjectUtil {
 	
 
 	public static SimpleDateFormat getDefaultDateFormat(){
-		
-			return new SimpleDateFormat(
-					"yyyy-MM-dd HH:mm:ss");
+			return DataFormatUtil.getSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//			return new SimpleDateFormat(
+//					"yyyy-MM-dd HH:mm:ss");
 	}
 	public static SimpleDateFormat getDateFormat(
 			String dateformat)
 	{
 		if(dateformat == null || dateformat.equals(""))
-			return new SimpleDateFormat(
-					"yyyy-MM-dd HH:mm:ss");
-		SimpleDateFormat f = new SimpleDateFormat(dateformat);
+			return  getDefaultDateFormat();
+		SimpleDateFormat f = DataFormatUtil.getSimpleDateFormat(dateformat);
 //		if(f != null)
 //			return f;
 		
@@ -2041,10 +2041,10 @@ public class ValueObjectUtil {
 //					// TODO Auto-generated catch block
 //					e1.printStackTrace();
 				}
-				
-				log.error(e.getMessage(),e);
+				throw new java.lang.IllegalArgumentException(new StringBuilder().append("Date format [").append(dateformat.toPattern()).append("] can not format date : ").append(data_str).toString(),e);
+//				log.error(e.getMessage(),e);
 			}
-			return new java.util.Date(data_str);
+//			return new java.util.Date(data_str);
 		}
 
 		if (toType == java.sql.Date.class) {
@@ -2222,7 +2222,7 @@ public class ValueObjectUtil {
 			NumberFormatException{
 		SimpleDateFormat dateformat_ = null;
 		if(dateformat != null)
-			dateformat_ = new SimpleDateFormat(dateformat);
+			dateformat_ = DataFormatUtil.getSimpleDateFormat(dateformat);
 		return arrayTypeCastWithDateformat(obj, type,
 				toType,dateformat_);
 	}
@@ -3074,13 +3074,14 @@ public class ValueObjectUtil {
 				else if(vc1 == float.class
 						|| Float.class.isAssignableFrom(vc1))
 					return floatCompare(((Float)value1).floatValue(),value2);
-				else if(vc1 == short.class
-						|| Short.class.isAssignableFrom(vc1))
-					return shortCompare(((Short)value1).shortValue(),value2);
 				else if(java.util.Date.class.isAssignableFrom(vc1))
 					return dateCompare((java.util.Date)value1,value2);
 				else if(value1 instanceof java.util.Date && value2 instanceof java.util.Date)
-					return ((java.util.Date)value1).compareTo(((java.util.Date)value2));
+					return dateCompare((java.util.Date)value1,(java.util.Date)value2);
+				else if(vc1 == short.class
+						|| Short.class.isAssignableFrom(vc1))
+					return shortCompare(((Short)value1).shortValue(),value2);
+				
 			}
 		}
 		catch(Throwable e)
@@ -3554,8 +3555,7 @@ public class ValueObjectUtil {
 	
 	public static int dateCompare(java.util.Date value1,Object value2)
 	{
-		 SimpleDateFormat format = new SimpleDateFormat(
-					"yyyy-MM-dd HH:mm:ss");
+		 
 		try {
 			Class vc2 = value2.getClass();
 			if(java.util.Date.class.isAssignableFrom(vc2))
@@ -3565,6 +3565,7 @@ public class ValueObjectUtil {
 			}
 			else if(String.class.isAssignableFrom(vc2))
 			{
+				SimpleDateFormat format = DataFormatUtil.getSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				java.util.Date v2 = format.parse((String)value2);
 				return dateCompare(value1,v2);
 			}
@@ -3598,6 +3599,7 @@ public class ValueObjectUtil {
 			}
 			else
 			{
+				SimpleDateFormat format = DataFormatUtil.getSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				java.util.Date v2 = format.parse(String.valueOf(value2));
 				return dateCompare(value1,v2);
 			}
@@ -3610,7 +3612,9 @@ public class ValueObjectUtil {
 	
 	public static int dateCompare(java.util.Date value1,java.util.Date value2)
 	{
-		return value1.compareTo(value2);
+		long thisTime = value1.getTime();
+        long anotherTime = value2.getTime();
+        return (thisTime<anotherTime ? -1 : (thisTime==anotherTime ? 0 : 1));
 	}
 
 	public static boolean isNumber(Object value) {

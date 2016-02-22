@@ -44,7 +44,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 
@@ -303,6 +302,60 @@ public class PagerDataSet extends PagerTagSupport {
      * jquery内容选择器
      */
     private String selector;
+    /**
+     * 指定当前记录对象el表达式变量名称
+     */
+    private String var;
+    
+    /**
+     * 指定当前循环变量el表达式名称
+     */
+    private String loopvar;
+    
+    /**
+     * 存放map当前记录key变量名称
+     */
+    private String mapkeyvar;
+    /**
+     * 存放总记录数变量名称
+     */
+    private String rowcountvar;
+    /**
+    * 存放分页当前页面offset变量名称
+    */
+    private String offsetvar;
+    
+    public String getOffsetvar() {
+		return offsetvar;
+	}
+
+	public void setOffsetvar(String offsetvar) {
+		this.offsetvar = offsetvar;
+	}
+
+	public String getRowcountvar() {
+		return rowcountvar;
+	}
+
+	public void setRowcountvar(String rowcountvar) {
+		this.rowcountvar = rowcountvar;
+	}
+
+	public String getPagesizevar() {
+		return pagesizevar;
+	}
+
+	public void setPagesizevar(String pagesizevar) {
+		this.pagesizevar = pagesizevar;
+	}
+	private String pagesizevar;
+	public String getLoopvar() {
+		return loopvar;
+	}
+
+	public void setLoopvar(String loopvar) {
+		this.loopvar = loopvar;
+	}
 
 	public PagerDataSet() {
 
@@ -2519,7 +2572,7 @@ public class PagerDataSet extends PagerTagSupport {
 		DataInfo dataInfo = pagerContext.getDataInfo();
 		if (dataInfo == null)
 			return SKIP_BODY;
-		doDataLoading();
+		doDataLoading(false);
 		int size = this.size();
 		if(size > 0)
 		{
@@ -2534,7 +2587,9 @@ public class PagerDataSet extends PagerTagSupport {
 					return SKIP_BODY;
 				}
 			}
-
+			initCurrentValueObject();
+			this.putVarValue();
+			this.putListScoptVarValue();
 			return EVAL_BODY_INCLUDE;
 			
 		}
@@ -2542,8 +2597,19 @@ public class PagerDataSet extends PagerTagSupport {
 			return SKIP_BODY;
 
 	}
-
-	public void doDataLoading() {
+	public void initCurrentValueObject()
+	{
+		this.currentValueObject = this.getClassDataValue(rowid);
+	}
+	public void doDataLoading()
+	{
+		doDataLoading(true);
+	}
+	/**
+	 * cms文档发布时，需要在doDataLoading中初始化当前记录对象，否则会报异常
+	 * @param initcurrentObject
+	 */
+	public void doDataLoading(boolean initcurrentObject) {
 		/**
 		 * 得到页面上要显示的值对象中字段
 		 * 
@@ -2599,7 +2665,7 @@ public class PagerDataSet extends PagerTagSupport {
 		
 
 		if (size() > 0) {
-			this.currentValueObject = this.getClassDataValue(rowid);
+			
 			/**
 			 * 以下的代码对取到的数据进行排序
 			 */
@@ -2616,10 +2682,68 @@ public class PagerDataSet extends PagerTagSupport {
 			{
 				sortBy(sortKey.trim(), t_desc);
 			}
+			
+			if(initcurrentObject)
+			{
+				this.initCurrentValueObject();
+			}
 //			return EVAL_BODY_INCLUDE;
 		} 
 		else
 			rowid = -1;
+	}
+	
+	private void putVarValue()
+	{
+		if(currentValueObject != null)
+		{
+			if(this.var != null)
+				request.setAttribute(var, currentValueObject.getValueObject());
+			if(this.loopvar != null)
+				request.setAttribute(loopvar, this.getRowid());
+			if(this.mapkeyvar != null)
+				request.setAttribute(mapkeyvar, this.getMapKey());
+			
+		}
+	}
+	
+	private void putListScoptVarValue()
+	{	
+		if(pagesizevar != null)
+			request.setAttribute(this.pagesizevar, this.getPageSize());
+		if(offsetvar != null)
+			request.setAttribute(this.offsetvar, this.getOffset());
+		if(rowcountvar != null)
+			request.setAttribute(this.rowcountvar, this.getRowcount());
+		
+	}
+	private void removeVarValue()
+	{
+		if(this.var != null )
+		{
+			request.removeAttribute(var);
+		}
+		if(this.loopvar != null)
+		{
+			request.removeAttribute(loopvar);
+		}
+		if(this.pagesizevar != null)
+		{
+			request.removeAttribute(pagesizevar);
+		}
+		if(this.rowcountvar != null)
+		{
+			request.removeAttribute(rowcountvar);
+		}
+		if(this.offsetvar != null)
+		{
+			request.removeAttribute(offsetvar);
+		}
+		if(this.mapkeyvar != null)
+		{
+			request.removeAttribute(mapkeyvar);
+		}
+		 
 	}
 
 	/**
@@ -2674,10 +2798,13 @@ public class PagerDataSet extends PagerTagSupport {
 			rowid++;
 //			pageContext.setAttribute(this.getDataSetName(), this);
 			pageContext.setAttribute(this.getRowidName(), rowid + "");
-			this.currentValueObject = this.getClassDataValue(rowid);
+//			this.currentValueObject = this.getClassDataValue(rowid);
+			this.initCurrentValueObject();
+			putVarValue();
 			return EVAL_BODY_AGAIN;
 		} else {
 			this.currentValueObject = null;
+			removeVarValue();
 			return SKIP_BODY;
 		}
 	}
@@ -3586,6 +3713,14 @@ public class PagerDataSet extends PagerTagSupport {
 				this.formulas.clear();
 				formulas = null;
 			}
+			this.removeVarValue();
+			this.var = null;
+			this.loopvar = null;
+			this.pagesizevar = null;
+			this.rowcountvar = null;
+			this.offsetvar = null;
+			this.mapkeyvar = null;
+			
 		}
 		catch(Exception e)
 		{
@@ -3611,6 +3746,22 @@ public class PagerDataSet extends PagerTagSupport {
 
 	public void setStart(int start) {
 		this.start = start;
+	}
+
+	public String getVar() {
+		return var;
+	}
+
+	public void setVar(String var) {
+		this.var = var;
+	}
+
+	public String getMapkeyvar() {
+		return mapkeyvar;
+	}
+
+	public void setMapkeyvar(String mapkeyvar) {
+		this.mapkeyvar = mapkeyvar;
 	}
 
     

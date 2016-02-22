@@ -446,13 +446,12 @@ public class JDBCPool {
 		p.setProperty(PoolManConstants.PROP_DEFAULTREADONLY, info
 				.isReadOnly()
 				+ "");
-		if(info
-		.getTxIsolationLevel() != null)
+		String TxIsolationLevel = info
+				.getTxIsolationLevel() ;
+		if(TxIsolationLevel != null && !TxIsolationLevel.equals(""))
 		{
 			p.setProperty(
-					PoolManConstants.PROP_DEFAULTTRANSACTIONISOLATION, info
-							.getTxIsolationLevel()
-							+ "");
+					PoolManConstants.PROP_DEFAULTTRANSACTIONISOLATION, TxIsolationLevel);
 		}
 
 		p.setProperty(PoolManConstants.PROP_POOLPREPAREDSTATEMENTS,
@@ -2320,8 +2319,8 @@ public class JDBCPool {
 		if (!this.status.equals("start"))
 			return;
 		
-		System.out.println("Shutdown poolman[" + this.getDBName() + "] start.");
-		log.debug("Shutdown poolman[" + this.getDBName() + "] start.");
+//		System.out.println("Shutdown poolman[" + this.getDBName() + "] start.");
+		log.debug("Shutdown datasource[" + this.getDBName() + "] start.");
 			
 			undeployDataSource();
 			this.stopTime = System.currentTimeMillis();
@@ -2341,8 +2340,8 @@ public class JDBCPool {
 			this.datasource = null;
 			this.inited = false;
 	
-		System.out.println("Shutdown poolman[" + this.getDBName() + "] ok.");
-
+//		System.out.println("Shutdown poolman[" + this.getDBName() + "] ok.");
+		log.debug("Shutdown datasource[" + this.getDBName() + "] ok.");
 		
 	}
 
